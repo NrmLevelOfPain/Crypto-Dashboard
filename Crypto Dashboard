@@ -1,0 +1,119 @@
+import React, { useEffect, useState } from "react";
+import "./App.css";
+
+const App = () => {
+  const [cryptoData, setCryptoData] = useState([]);
+  const [timer, setTimer] = useState("Loading...");
+
+  // Sample ICO end time (Replace with actual data)
+  const ICO_END_TIME = new Date("2024-12-31T23:59:59Z").getTime();
+
+  useEffect(() => {
+    const fetchCryptoData = async () => {
+      try {
+        const response = await fetch("https://api.coingecko.com/api/v3/coins/markets", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          params: {
+            vs_currency: "usd",
+            order: "market_cap_desc",
+            per_page: 5,
+            page: 1,
+          },
+        });
+
+        const data = await response.json();
+        setCryptoData(data);
+      } catch (error) {
+        console.error("Error fetching crypto data", error);
+      }
+    };
+
+    fetchCryptoData();
+
+    const interval = setInterval(() => {
+      const now = new Date().getTime();
+      const distance = ICO_END_TIME - now;
+
+      if (distance < 0) {
+        clearInterval(interval);
+        setTimer("ICO has ended");
+      } else {
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        setTimer(`${days}d ${hours}h ${minutes}m ${seconds}s`);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="app">
+      <header className="header">
+        <h1>Crypto Dashboard</h1>
+        <h2>ICO Countdown: {timer}</h2>
+      </header>
+
+      <main className="crypto-list">
+        {cryptoData.length === 0 ? (
+          <p>Loading data...</p>
+        ) : (
+          cryptoData.map((crypto) => (
+            <div key={crypto.id} className="crypto-card">
+              <h3>{crypto.name}</h3>
+              <p>Price: ${crypto.current_price}</p>
+              <p>Market Cap: ${crypto.market_cap.toLocaleString()}</p>
+              <p>24h Change: {crypto.price_change_percentage_24h.toFixed(2)}%</p>
+            </div>
+          ))
+        )}
+      </main>
+
+      <footer className="footer">
+        <p>Powered by Legion.cc Community</p>
+      </footer>
+    </div>
+  );
+};
+
+export default App;
+
+// App.css
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #1a1a2e;
+  color: #fff;
+  text-align: center;
+}
+
+.header {
+  padding: 20px;
+  background: #162447;
+}
+
+.crypto-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+.crypto-card {
+  padding: 20px;
+  background: #1f4068;
+  border-radius: 8px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.25);
+}
+
+.footer {
+  margin-top: 20px;
+  padding: 10px;
+  background: #162447;
+}
